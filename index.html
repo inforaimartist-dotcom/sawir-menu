@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Меню säwir</title>
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600;700&display=swap">
+<style>
+/* Layout: one-screen kiosk for a landscape tablet — logo + section tabs, full-bleed wheel of plates, centred dish card, category control pinned to the bottom. Deliberately light only: every photo sits on pure white. */
+:root {
+  --bg: #FFFFFF;
+  --ink: #1D1D1F;
+  --muted: #6E6E73;
+  --faint: #A8A8AD;
+  --well: #F3F2F4;
+  --accent: #8D1D30;
+  --accent-ink: #FFFFFF;
+  --font-display: "Inter Tight", -apple-system, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Inter", -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ease: cubic-bezier(.25, .8, .25, 1);
+  color-scheme: light;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-text);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+
+.gutter {
+  padding-left: max(16px, 3.2vw, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, 3.2vw, env(safe-area-inset-right, 0px));
+}
+
+/* Logo row + section tabs */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding-block: clamp(8px, 1.6vh, 26px) 0;
+}
+.logo { height: clamp(24px, 3.8vh, 48px); width: auto; display: block; }
+.tabs { display: flex; gap: clamp(18px, 2.6vw, 44px); }
+.tab {
+  position: relative;
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  min-height: 44px;
+  color: var(--faint);
+  font: 600 clamp(16px, min(1.6vw, 2.7vh), 30px)/1 var(--font-display);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: color .3s var(--ease);
+}
+.tab::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform .35s var(--ease);
+}
+.tab[aria-pressed="true"] { color: var(--ink); }
+.tab[aria-pressed="true"]::after { transform: scaleX(1); }
+.tab:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 4px; border-radius: 4px; }
+
+/* Wheel */
+.stage {
+  position: relative;
+  overflow: hidden;
+  overflow: clip visible; /* the centre photo may grow past the wheel's band into the white margins above and below */
+  touch-action: none;
+  cursor: grab;
+  min-width: 0;
+  transition: opacity .16s var(--ease);
+}
+.stage.is-swapping { opacity: 0; }
+.stage.is-dragging { cursor: grabbing; }
+.plate {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  will-change: transform, opacity;
+  transform-origin: 50% 50%;
+}
+.plate img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
+}
+
+/* Dish card: fixed height so the wheel never jumps between short and long cards */
+.info {
+  text-align: center;
+  height: clamp(230px, 34vh, 440px);
+  padding-block: clamp(4px, 1vh, 14px) clamp(6px, 1.4vh, 18px);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+.about {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(5px, 0.95vh, 12px);
+  min-height: 0;
+}
+.info.rise .about > *, .info.rise .buy { animation: rise .32s var(--ease) both; }
+.info.rise .about > *:nth-child(2) { animation-delay: .03s; }
+.info.rise .about > *:nth-child(3) { animation-delay: .05s; }
+.info.rise .about > *:nth-child(4) { animation-delay: .07s; }
+.info.rise .about > *:nth-child(5) { animation-delay: .08s; }
+.info.rise .buy { animation-delay: .1s; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.eyebrow {
+  margin: 0;
+  font-size: clamp(12px, min(1.05vw, 1.8vh), 19px);
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(24px, min(3.4vw, 4.6vh), 66px);
+  line-height: 1.05;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+  max-width: 30ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.kz {
+  margin: 0;
+  font-size: clamp(14px, min(1.25vw, 2vh), 23px);
+  line-height: 1.3;
+  color: var(--muted);
+  max-width: 40ch;
+}
+.desc {
+  margin: 0;
+  font-size: clamp(14px, min(1.25vw, 2vh), 23px);
+  line-height: 1.4;
+  color: var(--ink);
+  opacity: .82;
+  max-width: 54ch;
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Price: its own row right under the description, always dead centre; the badge sits beside it without pushing it */
+.buy {
+  justify-self: stretch;
+  margin-top: clamp(2px, 0.6vh, 10px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  column-gap: clamp(10px, 1.1vw, 20px);
+  font-variant-numeric: tabular-nums;
+}
+.tag-slot { justify-self: start; display: flex; }
+.price {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(20px, min(2.2vw, 3.6vh), 44px);
+  letter-spacing: -0.015em;
+}
+.meta {
+  margin: 0;
+  font-size: clamp(13px, min(1.1vw, 1.9vh), 20px);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tag {
+  align-self: center;
+  padding: .28em .8em .32em;
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: clamp(12px, min(0.95vw, 1.7vh), 17px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+/* Category control */
+.bar {
+  display: grid;
+  justify-items: center;
+  gap: clamp(6px, 1vh, 12px);
+  padding-block: 0 clamp(12px, 2.4vh, 32px);
+  min-width: 0;
+}
+.hint {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: clamp(12px, 0.95vw, 17px);
+  color: var(--faint);
+  transition: opacity .5s var(--ease);
+}
+.hint.is-gone { opacity: 0; }
+.hint svg { width: 1.1em; height: 1.1em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.seg-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.seg-scroll.is-overflowing {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+}
+.seg-scroll::-webkit-scrollbar { display: none; }
+.seg {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  padding: 5px;
+  background: var(--well);
+  border-radius: 999px;
+  width: max-content;
+}
+.seg-ind {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 0;
+  width: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: transform .42s var(--ease), width .42s var(--ease);
+}
+.seg button {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 500 max(13px, calc(clamp(14px, min(1.15vw, 2vh), 22px) * var(--fit, 1)))/1 var(--font-text);
+  letter-spacing: -0.005em;
+  min-height: clamp(44px, 6.2vh, 70px);
+  padding: 0 calc(clamp(14px, 1.6vw, 34px) * var(--fit, 1));
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .3s var(--ease);
+}
+.seg button[aria-pressed="true"] { color: var(--accent-ink); }
+.seg button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+
+@media (max-width: 600px) {
+  .desc { -webkit-line-clamp: 3; }
+  .top { justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info.rise > * { animation: none; }
+  .seg-ind, .hint, .stage, .tab, .tab::after { transition: none; }
+}
+
+/* Kiosk: no zoom, no pull-to-refresh, no long-press menus */
+html, body { overscroll-behavior: none; touch-action: manipulation; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top gutter">
+    <img class="logo" src="img/logo.png" alt="säwir" draggable="false">
+    <nav class="tabs" id="tabs" aria-label="Разделы меню"></nav>
+  </header>
+
+  <main class="stage" id="stage" aria-roledescription="карусель" aria-label="Позиции меню"></main>
+
+  <section class="info gutter" id="info" aria-live="polite">
+    <div class="about">
+      <p class="eyebrow" id="eyebrow">Завтраки · 1 из 8</p>
+      <h1 class="name" id="name">Французский омлет</h1>
+      <p class="kz" id="kz">Француз омлеті</p>
+      <p class="desc" id="desc">Омлет на сливочном масле, куриный рулет, тартин и зелёный лук</p>
+      <p class="meta" id="meta">290&nbsp;г · 635&nbsp;ккал · Б&nbsp;33 · Ж&nbsp;41 · У&nbsp;33</p>
+      <div class="buy">
+        <span aria-hidden="true"></span>
+        <span class="price" id="price">2&#8239;200&nbsp;₸</span>
+        <span class="tag-slot"><span class="tag" id="tag" hidden></span></span>
+      </div>
+    </div>
+  </section>
+
+  <nav class="bar gutter" aria-label="Категории">
+    <p class="hint" id="hint">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      Проведите пальцем, чтобы листать
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </p>
+    <div class="seg-scroll" id="segScroll">
+      <div class="seg" id="seg"><span class="seg-ind" id="segInd" aria-hidden="true"></span></div>
+    </div>
+  </nav>
+</div>
+
+<script>
+(() => {
+  const VERSION = '20261123-0928';
+  const IMG_V = '20261123-0928';
+  // Menu data. Kitchen and desserts: säwir printed menu (Nov 2026). Drinks: printed menu prices, volumes from the säwir drink cards.
+  // k = [ккал, белки, жиры, углеводы]; w = weight or volume; t = badge.
+  const MENU = [
+    { name: 'Напитки', subs: [
+      { name: 'Кофейная классика', items: [
+        { img: 'dr-82983', name: 'Эспрессо', desc: 'С цитрусовой водой', price: 1100 },
+        { img: 'dr-82982', name: 'Американо', w: '170–200 мл', price: 1100 },
+        { img: 'dr-78160', name: 'Флэт уайт', w: '200 мл', price: 1300 },
+        { img: 'dr-78159', name: 'Латте', w: '350 мл', price: 1300 },
+        { img: 'dr-78158', name: 'Капучино', w: '350 мл', price: 1400 },
+        { img: 'dr-78161', name: 'Раф', w: '350 мл', price: 1500 },
+        { img: 'dr-82999', name: 'Батч брю', desc: 'Фильтр-кофе', w: '300 мл', price: 1400 },
+        { img: 'dr-82998', name: 'AeroPress', desc: 'Насыщенный вкус и плотное тело, мягче обычного фильтра', price: 1900 },
+        { img: 'dr-82997', name: 'V60', desc: 'Фильтр-кофе: лёгкий, чистый, сбалансированный', price: 1900 },
+      ]},
+      { name: 'Авторский кофе', items: [
+        { img: 'dr-78162', name: 'Раф Qazaqsha', w: '350 мл', price: 1900 },
+        { img: 'dr-78163', name: 'Раф қайнатылған карамель', w: '350 мл', price: 1900 },
+        { img: 'dr-78164', name: 'Латте құрт-малина', w: '350 мл', price: 1800 },
+        { img: 'dr-82979', name: 'Капучино цитрус-малина', w: '350 мл', price: 1900 },
+        { img: 'dr-83042', name: 'Цитрусовый американо', w: '170–200 мл', price: 1300 },
+        { img: 'dr-83039', name: 'Эспрессо тоник', w: '450 мл', price: 2500 },
+        { img: 'dr-118418', name: 'Урбеч', w: '250 мл', price: 2500 },
+        { img: 'dr-83040', name: 'Кофейное гляссе', desc: 'Мороженое и эспрессо', price: 1900 },
+        { img: 'dr-83041', name: 'Фраппе карамель', w: '450 мл', price: 2500 },
+        { img: 'dr-118392', name: 'Фильтр с вишней', price: 1500 },
+        { img: 'dr-78243', name: 'Фильтр малиновый', w: '200 мл', price: 1700 },
+        { img: 'dr-82980', name: 'Фильтр цитрусовый', price: 1500 },
+        { img: 'dr-82981', name: 'Фильтр алоэ с мёдом', price: 1500 },
+      ]},
+      { name: 'Не кофе', items: [
+        { img: 'dr-83035', name: 'Какао', w: '350 мл', price: 1700 },
+        { img: 'dr-118393', name: 'Шоколадный коктейль', w: '450 мл', price: 1900 },
+        { img: 'dr-83034', name: 'Ванильный коктейль', w: '450 мл', price: 1900 },
+        { img: 'dr-83031', name: 'Фреш апельсиновый', desc: 'Свежевыжатый апельсин', w: '300 мл', price: 2200 },
+        { img: 'dr-119519', name: 'Натуральные шоты', desc: 'Имбирные шоты', w: '4 × 60 мл', price: 2000 },
+      ]},
+      { name: 'Матча', items: [
+        { img: 'dr-83000', name: 'Матча латте', w: '350 мл', price: 1600 },
+        { img: 'dr-107360', name: 'Айс матча', w: '450 мл', price: 1600 },
+        { img: 'dr-119490', name: 'Айс матча клубничная', w: '450 мл', price: 1900 },
+        { img: 'dr-119491', name: 'Айс матча манго', w: '450 мл', price: 2500 },
+        { img: 'dr-83002', name: 'Гляссе матча', desc: 'Мороженое и матча', price: 1900 },
+        { img: 'dr-116397', name: 'Матча алоэ тоник', w: '450 мл', price: 1900 },
+        { img: 'dr-83001', name: 'Фраппе цветочная матча', w: '450 мл', price: 2600 },
+      ]},
+      { name: 'Чай', items: [
+        { img: 'dr-83043', name: 'Чёрный / зелёный / красный', price: 1000 },
+        { img: 'dr-83044', name: 'Жасмин-цитрус', price: 1800 },
+        { img: 'dr-83048', name: 'Груша-вишня', price: 1900 },
+        { img: 'dr-83045', name: 'Облепиха с мёдом', price: 1800 },
+        { img: 'dr-83047', name: 'Алоэ с мёдом', price: 2100 },
+        { img: 'dr-83046', name: 'Карак', price: 3500 },
+      ]},
+      { name: 'Со льдом', items: [
+        { img: 'dr-118500', name: 'Айс американо', price: 1200 },
+        { img: 'dr-118417', name: 'Айс латте', w: '450 мл', price: 1400 },
+        { img: 'dr-83038', name: 'Бамбл кофе', w: '450 мл', price: 2600 },
+        { img: 'dr-118501', name: 'Cold brew смородина', price: 2000 },
+        { img: 'dr-83053', name: 'Холодный чай анчан-малина', w: '450 мл', price: 1600 },
+        { img: 'dr-118413', name: 'Цитрусовый лимонад', w: '450 мл', price: 1600 },
+        { img: 'dr-118416', name: 'Малина-лайм', w: '450 мл', price: 1600 },
+        { img: 'dr-118415', name: 'Щавель', w: '450 мл', price: 1600 },
+        { img: 'dr-118414', name: 'Ананас-вишня', w: '450 мл', price: 1700 },
+        { img: 'dr-118391', name: 'Смузи банан-клубника', w: '450 мл', price: 1900 },
+        { img: 'dr-83049', name: 'Смузи ягодный', w: '450 мл', price: 2100 },
+      ]},
+    ]},
+    { name: 'Кухня', subs: [
+      { name: 'Завтраки', items: [
+        { img: 'k-fr-omelet', name: 'Французский омлет', kz: 'Француз омлеті', desc: 'Омлет на сливочном масле, куриный рулет, тартин и зелёный лук', k: [635, 33, 41, 33], w: '290 г', price: 2200 },
+        { img: 'k-multigrain', name: 'Мультизлаковый завтрак', kz: 'Көпдәнді таңғы ас', desc: 'Гранола, греческий йогурт, абрикос и карамель', k: [360, 10, 12, 54], w: '160 г', price: 1900 },
+        { img: 'k-jp-omelet', name: 'Японский омлет с сёмгой', kz: 'Ақсерке қосылған жапон омлеті', desc: 'Омлет, сёмга, авокадо, тартин, черри и салат', k: [615, 40, 35, 33], w: '390 г', price: 2700 },
+        { img: 'k-fr-breakfast', name: 'Французский завтрак', kz: 'Француз таңғы асы', desc: 'Омлет, круассан, чиа-пудинг со сливками и ягодами, чеддер, гауда, грейпфрут и салат', k: [795, 34, 50, 51], w: '430 г', price: 4000 },
+        { img: 'k-scramble', name: 'Скрэмбл с лососем', kz: 'Ақсерке қосылған скрэмбл', desc: 'Скрэмбл, лосось, авокадо, творожный сыр и тартин', k: [655, 42, 39, 34], w: '410 г', price: 2500 },
+        { img: 'k-veg', name: 'Завтрак с овощами', kz: 'Көкөністі таңғы ас', desc: 'Яйца, брокколи, огурцы, черри, тартин и ореховый соус', k: [670, 23, 43, 47], w: '470 г', price: 1600 },
+        { img: 'k-kz-breakfast', name: 'Казахский завтрак', kz: 'Қазақ таңғы асы', desc: 'Тушёная конина, бэйби-картофель, бауырсаки, домашняя сметана и перепелиные яйца', k: [655, 35, 40, 39], w: '420 г', price: 3000, t: 'хит' },
+        { img: 'k-en-breakfast', name: 'Английский завтрак', kz: 'Ағылшын таңғы асы', desc: 'Яичница, охотничьи колбаски, фасоль, шампиньоны, картофель и тост', k: [910, 49, 59, 47], w: '500 г', price: 2800 },
+      ]},
+      { name: 'Каши', items: [
+        { img: 'k-oat', name: 'Овсяная каша с бананом', kz: 'Банан қосылған сұлы ботқасы', desc: 'Овсянка на молоке, банан, банановый соус, фисташки и миндаль', k: [750, 17, 28, 106], w: '390 г', price: 1600 },
+        { img: 'k-rice-mango', name: 'Рисовая каша с манго', kz: 'Манго қосылған күріш ботқасы', desc: 'Рисовая каша на молоке, манго, манговый соус, фисташки и миндаль', k: [755, 14, 25, 116], w: '490 г', price: 2200 },
+        { img: 'k-porridge-nuts', name: 'Каша рисовая / овсяная с орехами', kz: 'Жаңғақ қосылған күріш / сұлы ботқасы', desc: 'Каша на молоке с маслом и орехами', k: [670, 13, 27, 94], w: '420 г', price: 1300 },
+      ]},
+      { name: 'Супы', items: [
+        { img: 'k-lentil', name: 'Чечевичный крем-суп', kz: 'Жасымық крем-сорпасы', desc: 'Чечевица, сливки и сухарики', k: [500, 18, 25, 50], w: '400 г', price: 1800 },
+        { img: 'k-home-soup', name: 'Суп по-домашнему', kz: 'Үйдегідей сорпа', desc: 'Куриный бульон, лапша, запечённое филе, морковь и лук', k: [280, 29, 5, 30], w: '460 г', price: 1500 },
+        { img: 'k-tomyam', name: 'Том-ям', desc: 'Креветки, морепродукты, сёмга, кокосовое молоко и рис', k: [655, 35, 33, 54], w: '550 г', price: 3500, t: 'острое' },
+      ]},
+      { name: 'Салаты и боулы', items: [
+        { img: 'k-stracciatella', name: 'Свежий салат со страчателлой', kz: 'Страчателла қосылған балғын салат', desc: 'Огурцы, томаты, перец, песто и страчателла', k: [225, 8, 18, 9], w: '270 г', price: 1900 },
+        { img: 'k-eggplant', name: 'Салат с хрустящими баклажанами', kz: 'Қытырлақ баялды салат', desc: 'Баклажаны в соусе свит-чили, творожный сыр, черри и кунжут', k: [805, 11, 55, 68], w: '510 г', price: 2300 },
+        { img: 'k-bowl-chicken', name: 'Боул с курицей', kz: 'Тауық еті қосылған боул', desc: 'Рис, куриное филе, терияки, брокколи и яйцо', k: [640, 45, 15, 81], w: '560 г', price: 2600 },
+        { img: 'k-bowl-salmon', name: 'Боул с лососем', kz: 'Ақсерке қосылған боул', desc: 'Рис, лосось, унаги, творожный сыр, брокколи, яйцо и черри', k: [780, 35, 31, 90], w: '610 г', price: 3200 },
+      ]},
+      { name: 'Тартины', items: [
+        { img: 'k-tartine-salmon', name: 'Тартин с лососем', kz: 'Ақсерке қосылған тартин', desc: 'Лосось, яйцо пашот, авокадо, голландез, черри и салат', k: [670, 30, 43, 38], w: '320 г', price: 2990 },
+        { img: 'k-tartine-turkey', name: 'Тартин с индейкой', kz: 'Күркетауық қосылған тартин', desc: 'Куриный рулет, яйцо пашот, авокадо, голландез, черри и салат', k: [650, 27, 42, 38], w: '320 г', price: 2300 },
+        { img: 'k-tartine-hummus', name: 'Тартин с хумусом', kz: 'Хумус қосылған тартин', desc: 'Хумус, яйцо пашот, авокадо, голландез, черри и салат', k: [620, 19, 39, 45], w: '300 г', price: 1800 },
+      ]},
+      { name: 'Блины и круассаны', items: [
+        { img: 'k-blini-salmon', name: 'Блины с лососем', kz: 'Ақсерке қосылған құймақ', desc: 'Блины с лососем и творожным сыром', k: [555, 24, 35, 36], w: '260 г', price: 2900 },
+        { img: 'k-blini-chicken', name: 'Блины с курицей и грибами', kz: 'Тауық пен саңырауқұлақ қосылған құймақ', desc: 'Курица и шампиньоны в сливочном соусе', k: [750, 46, 39, 54], w: '460 г', price: 2500 },
+        { img: 'k-croissant-salmon', name: 'Круассан с лососем', kz: 'Ақсерке қосылған круассан', desc: 'Лосось, яйцо пашот, авокадо, голландез, черри и салат', k: [735, 29, 54, 30], w: '310 г', price: 3500 },
+        { img: 'k-croissant-turkey', name: 'Круассан с индейкой', kz: 'Күркетауық қосылған круассан', desc: 'Куриный рулет, яйцо пашот, авокадо, голландез, черри и салат', k: [715, 26, 53, 31], w: '310 г', price: 3000 },
+      ]},
+      { name: 'Сендвичи и бургеры', items: [
+        { img: 'k-sandwich', name: 'Сендвич с курицей', kz: 'Тауық еті қосылған сендвич', desc: 'Куриное филе, яйцо, чеддер, томаты, огурец и соус цезарь', k: [795, 44, 45, 54], w: '400 г', price: 2700 },
+        { img: 'k-caesar-roll', name: 'Ролл цезарь', kz: 'Цезарь ролл', desc: 'Куриное филе в панировке, айсберг, томаты, соус цезарь и сырный соус', k: [1005, 35, 69, 60], w: '460 г', price: 2300 },
+        { img: 'k-burger', name: 'Классический бургер', kz: 'Классикалық бургер', desc: 'Говяжья котлета, чеддер, томаты, огурцы, соус и картофель фри', k: [1285, 43, 84, 89], w: '500 г', price: 3000 },
+      ]},
+      { name: 'Мясные блюда', items: [
+        { img: 'k-kiev', name: 'Котлета по-киевски с пюре', kz: 'Пюре қосылған киевше котлет', desc: 'Куриная котлета, картофельное пюре, сливочный соус, чеддер, хрустящий лук и черри', k: [865, 34, 61, 43], w: '420 г', price: 3000, t: 'новое' },
+        { img: 'k-beefsteak', name: 'Бифштекс с пюре', kz: 'Пюре қосылған бифштекс', desc: 'Говяжий бифштекс с яйцом, картофельное пюре, сливочный соус и зелёное масло', k: [740, 38, 54, 27], w: '380 г', price: 3100 },
+        { img: 'k-horse', name: 'Тушёная конина с пюре', kz: 'Пюре қосылған бұқтырылған жылқы еті', desc: 'Тушёная конина, картофельное пюре и маринованный лук', k: [465, 30, 21, 40], w: '410 г', price: 2700 },
+      ]},
+      { name: 'Основные блюда', items: [
+        { img: 'k-schnitzel', name: 'Шницель с рисом и овощами', kz: 'Күріш пен көкөніс қосылған шницель', desc: 'Шницель, рис, брокколи, горошек, кукуруза и ореховый соус', k: [1060, 49, 59, 84], w: '530 г', price: 2700, t: 'хит' },
+        { img: 'k-pasta-navy', name: 'Паста по-флотски с кониной', kz: 'Жылқы еті қосылған флотша паста', desc: 'Феттучине с кониной, томатным соусом, маринованным луком и молодым картофелем', k: [680, 37, 29, 68], w: '420 г', price: 3100 },
+        { img: 'k-baby-potato', name: 'Бейби картофель с индейкой и грибами', kz: 'Бейби картоп, күркетауық, саңырауқұлақ', desc: 'Молодой картофель, индейка, грибы, сметана и зелёный лук', k: [395, 19, 21, 31], w: '350 г', price: 1600 },
+      ]},
+      { name: 'Пасты', items: [
+        { img: 'k-alfredo-salmon', name: 'Паста Альфредо с сёмгой', kz: 'Ақсерке қосылған Альфредо пастасы', desc: 'Феттучине в сливочном соусе с лососем, брокколи, песто, пармезаном и вялеными томатами', k: [835, 35, 47, 66], w: '440 г', price: 3900 },
+        { img: 'k-alfredo-basil', name: 'Паста Альфредо с базиликом', kz: 'Райхан қосылған Альфредо пастасы', desc: 'Феттучине в сливочном соусе с курицей, шампиньонами, песто, пармезаном и вялеными томатами', k: [840, 46, 43, 65], w: '470 г', price: 3100 },
+        { img: 'k-arrabiata', name: 'Паста Аррабиата', kz: 'Аррабиата пастасы', desc: 'Пенне в остром томатном соусе со страчателлой и пармезаном', k: [685, 33, 30, 70], w: '530 г', price: 2500, t: 'острое' },
+      ]},
+      { name: 'Сладкое', items: [
+        { img: 'k-syrniki', name: 'Сырники', kz: 'Сүзбелі құймақ', desc: 'Сырники со сметаной, шоколадным и карамельным топпингом и вишней', k: [560, 24, 27, 55], w: '240 г', price: 2200 },
+        { img: 'k-syrniki-mango', name: 'Сырники с манго', kz: 'Манго қосылған сүзбелі құймақ', desc: 'Сырники с манговым соусом и кусочками манго', k: [455, 23, 17, 54], w: '270 г', price: 2500, t: 'новое' },
+        { img: 'k-waffles', name: 'Бельгийские вафли', kz: 'Бельгиялық вафли', desc: 'Вафля, мороженое, банан, ягоды, карамель и шоколад', k: [645, 12, 25, 92], w: '300 г', price: 2900 },
+        { img: 'k-baursak', name: 'Бауырсаки с домашней сметаной', kz: 'Үй қаймағымен бауырсақ', desc: 'Бауырсаки с сахарной пудрой и домашней сметаной', k: [595, 11, 34, 61], w: '200 г', price: 900 },
+      ]},
+    ]},
+    { name: 'Десерты', subs: [
+      { name: 'Торты и тарты', items: [
+        { img: 'd-pear', name: 'Пирог с грушами', kz: 'Алмұрт бәліші', price: 2200 },
+        { img: 'd-almond', name: 'Миндальный пирог', kz: 'Бадам бәліші', price: 1600 },
+        { img: 'd-medovik', name: 'Медовик', kz: 'Бал торты', price: 1800 },
+        { img: 'd-meringue', name: 'Меренговый рулет', kz: 'Меренга рулеті', price: 1800 },
+        { img: 'd-berry-tart', name: 'Ягодный тарт', kz: 'Жидек тарты', price: 2600 },
+        { img: 'd-raspberry-tart', name: 'Малиновый тарт', kz: 'Таңқурай тарты', price: 1800 },
+        { img: 'd-banana-tart', name: 'Тарт банан-карамель', kz: 'Банан-карамель тарты', price: 1600 },
+        { img: 'd-cheesecake-millet', name: 'Холодный чизкейк с тары', kz: 'Тары қосылған салқын чизкейк', price: 1800 },
+        { img: 'd-basque', name: 'Испанский чизкейк', kz: 'Испан чизкейгі', price: 2500 },
+      ]},
+      { name: 'Выпечка', items: [
+        { img: 'd-banana-cake', name: 'Банановый кекс', kz: 'Банан кексі', price: 1200 },
+        { img: 'd-cinnabons', name: 'Синнабоны', kz: 'Синнабондар', price: 1000 },
+        { img: 'd-canele-classic', name: 'Канели классика', kz: 'Классикалық канеле', price: 800 },
+        { img: 'd-canele-flavored', name: 'Канели вкусовые', kz: 'Түрлі дәмді канеле', price: 1100 },
+        { img: 'd-financier', name: 'Финансье', price: 1100 },
+        { img: 'd-vegan-bar', name: 'Батончик веган', kz: 'Веган батончигі', price: 1200 },
+        { img: 'd-cookie-choc', name: 'Печенье шоколадное', kz: 'Шоколадты печенье', price: 1200 },
+        { img: 'd-cookie-ny', name: 'Печенье Нью-Йорк', kz: 'Нью-Йорк печеньесі', price: 1200 },
+      ]},
+    ]},
+  ];
+
+  // Section order on the tablet: Кухня, Напитки, Десерты
+  MENU.unshift(MENU.splice(1, 1)[0]);
+
+  // Wheel geometry, in units of the centre plate size C, for offsets 0..4 from the centre
+  const KX = [0, 0.9, 1.52, 2.02, 2.42];
+  // ...and as a share of half the screen width, so the second neighbours sit on the screen edges
+  const KXW = [0, 0.56, 1.0, 1.42, 1.75];
+  const KS = [1, 0.6, 0.4, 0.3, 0.24];
+  const KY = [0, 0.05, 0.14, 0.24, 0.3];
+  const KO = [1, 1, 1, 0, 0];
+  let X = KX.slice();
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const STIFF = reduce ? 420 : 150;
+  const DAMP = 2 * Math.sqrt(STIFF);
+
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), info = $('info'), tabs = $('tabs');
+  const elEyebrow = $('eyebrow'), elName = $('name'), elKz = $('kz'), elDesc = $('desc');
+  const elPrice = $('price'), elMeta = $('meta'), elTag = $('tag');
+  const seg = $('seg'), segInd = $('segInd'), segScroll = $('segScroll'), hint = $('hint');
+
+  const mod = (a, n) => ((a % n) + n) % n;
+  const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₸';
+  const lerpK = (arr, a) => {
+    const k = Math.min(Math.floor(a), arr.length - 2);
+    const f = Math.min(a - k, 1);
+    return arr[k] + (arr[k + 1] - arr[k]) * f;
+  };
+
+  // Per-section state
+  let sec = 0, ITEMS = [], N = 0, plates = [], segBtns = [], catFirst = [], catCount = [];
+  const lastPos = MENU.map(() => 0);
+
+  // Wheel state
+  let C = 400, stepPx = 300;
+  let pos = 0, vel = 0, target = 0;
+  let dragging = false, moved = false, startX = 0, startPos = 0, pid = null;
+  let samples = [];
+  let current = -1, currentCat = -1;
+
+  // Section tabs
+  const tabBtns = MENU.map((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tab';
+    b.id = 'tab-' + i;
+    b.textContent = s.name;
+    b.setAttribute('aria-pressed', i === sec ? 'true' : 'false');
+    b.addEventListener('click', () => { switchSection(i); wake(); });
+    tabs.appendChild(b);
+    return b;
+  });
+
+  function buildSection(s) {
+    sec = s;
+    tabBtns.forEach((b, i) => b.setAttribute('aria-pressed', i === s ? 'true' : 'false'));
+    ITEMS = [];
+    MENU[s].subs.forEach((sub, c) => sub.items.forEach(it => ITEMS.push(Object.assign({ cat: c }, it))));
+    N = ITEMS.length;
+    catFirst = MENU[s].subs.map((_, c) => ITEMS.findIndex(it => it.cat === c));
+    catCount = MENU[s].subs.map(sub => sub.items.length);
+
+    stage.querySelectorAll('.plate').forEach(p => p.remove());
+    plates = ITEMS.map((it, i) => {
+      const d = document.createElement('div');
+      d.className = 'plate';
+      d.dataset.i = i;
+      d.style.visibility = 'hidden';
+      const img = document.createElement('img');
+      img.alt = it.name;
+      img.draggable = false;
+      img.decoding = 'async';
+      d.appendChild(img);
+      stage.appendChild(d);
+      return d;
+    });
+
+    seg.querySelectorAll('button').forEach(b => b.remove());
+    segBtns = MENU[s].subs.map((sub, c) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.id = 'cat-' + s + '-' + c;
+      b.textContent = sub.name;
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => { goTo(catFirst[c]); wake(); });
+      seg.appendChild(b);
+      return b;
+    });
+
+    pos = target = lastPos[s];
+    vel = 0;
+    current = -1;
+    currentCat = -1;
+    measure();
+  }
+
+  function switchSection(s) {
+    if (s === sec) { goTo(0); return; }
+    lastPos[sec] = Math.round(target);
+    if (reduce) { buildSection(s); return; }
+    stage.classList.add('is-swapping');
+    setTimeout(() => {
+      buildSection(s);
+      requestAnimationFrame(() => stage.classList.remove('is-swapping'));
+    }, 160);
+  }
+
+  function measure() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    // Centre photo: a little taller than the wheel band (its transparent margins spill over), capped by screen width
+    C = Math.max(120, Math.min(h * 1.12, vw * (vw > vh ? 0.42 : 0.64)));
+    X = KX.map((k, i) => Math.max(k * C, KXW[i] * w / 2));
+    stepPx = X[1] * 0.8;
+    plates.forEach(p => {
+      p.style.width = C + 'px';
+      p.style.height = C + 'px';
+      p.style.marginLeft = (-C / 2) + 'px';
+      p.style.marginTop = (-C / 2) + 'px';
+    });
+    fitSeg();
+    placeIndicator();
+    render();
+  }
+
+  // Shrink the category chips just enough that all of them fit on the screen
+  // (a 32" 1920×1080 screen shows every kitchen category); scrolling stays only as a last resort on small screens
+  function fitSeg() {
+    seg.style.setProperty('--fit', '1');
+    const bar = segScroll.parentElement;
+    const cs = getComputedStyle(bar);
+    const avail = bar.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 8;
+    let fit = 1;
+    for (let k = 0; k < 4; k++) {
+      const need = seg.offsetWidth;
+      if (need <= avail) break;
+      fit = Math.max(0.55, fit * avail / need);
+      seg.style.setProperty('--fit', fit.toFixed(3));
+    }
+    segScroll.classList.toggle('is-overflowing', seg.offsetWidth > segScroll.clientWidth + 1);
+  }
+
+  function render() {
+    for (let i = 0; i < N; i++) {
+      const o = mod(i - pos + N / 2, N) - N / 2;
+      const a = Math.abs(o);
+      const p = plates[i];
+      if (a < 4.6) {
+        const img = p.firstChild;
+        if (!img.src) img.src = 'img/' + ITEMS[i].img + '.webp?v=' + IMG_V;
+      }
+      if (a >= 4) {
+        p.style.visibility = 'hidden';
+        continue;
+      }
+      const sgn = o < 0 ? -1 : 1;
+      const x = sgn * lerpK(X, a);
+      const y = lerpK(KY, a) * C;
+      const s = lerpK(KS, a);
+      const op = lerpK(KO, a);
+      p.style.visibility = op <= 0.01 ? 'hidden' : 'visible';
+      p.style.opacity = op;
+      p.style.zIndex = String(100 - Math.round(a * 10));
+      p.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0) scale(' + s.toFixed(4) + ')';
+    }
+    const idx = mod(Math.round(pos), N);
+    if (idx !== current) setInfo(idx);
+  }
+
+  function setInfo(idx) {
+    current = idx;
+    const it = ITEMS[idx];
+    const sub = MENU[sec].subs[it.cat];
+    elEyebrow.textContent = sub.name + ' · ' + (idx - catFirst[it.cat] + 1) + ' из ' + catCount[it.cat];
+    elName.textContent = it.name;
+    elKz.textContent = it.kz || '';
+    elKz.hidden = !it.kz;
+    elDesc.textContent = it.desc || '';
+    elDesc.hidden = !it.desc;
+    elPrice.textContent = fmt(it.price);
+    const meta = [];
+    if (it.w) meta.push(it.w);
+    if (it.k) meta.push(it.k[0] + ' ккал · Б ' + it.k[1] + ' · Ж ' + it.k[2] + ' · У ' + it.k[3]);
+    elMeta.textContent = meta.join(' · ');
+    elMeta.hidden = !meta.length;
+    elTag.textContent = it.t || '';
+    elTag.hidden = !it.t;
+    info.classList.remove('rise');
+    void info.offsetWidth;
+    info.classList.add('rise');
+    if (it.cat !== currentCat) {
+      currentCat = it.cat;
+      segBtns.forEach((b, c) => b.setAttribute('aria-pressed', c === it.cat ? 'true' : 'false'));
+      placeIndicator();
+    }
+  }
+
+  function placeIndicator() {
+    const b = segBtns[Math.max(0, currentCat)];
+    if (!b) return;
+    segInd.style.width = b.offsetWidth + 'px';
+    segInd.style.transform = 'translateX(' + b.offsetLeft + 'px)';
+    const sc = segScroll;
+    const l = b.offsetLeft, r = l + b.offsetWidth;
+    if (l < sc.scrollLeft + 24 || r > sc.scrollLeft + sc.clientWidth - 24) {
+      sc.scrollTo({ left: l - (sc.clientWidth - b.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' });
+    }
+  }
+
+  function goTo(i) {
+    const base = Math.round(target);
+    let d = mod(i - mod(base, N), N);
+    if (d > N / 2) d -= N;
+    target = base + d;
+    kick();
+  }
+
+  // Spring loop
+  let raf = 0, last = 0;
+  function kick() {
+    if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
+  }
+  function tick(now) {
+    let dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    if (!dragging) {
+      const h = 1 / 240;
+      while (dt > 0) {
+        const s = Math.min(h, dt);
+        const acc = -STIFF * (pos - target) - DAMP * vel;
+        vel += acc * s;
+        pos += vel * s;
+        dt -= s;
+      }
+      if (Math.abs(pos - target) < 0.0004 && Math.abs(vel) < 0.002) {
+        pos = target; vel = 0;
+        render();
+        raf = 0;
+        return;
+      }
+    }
+    render();
+    raf = requestAnimationFrame(tick);
+  }
+
+  // Drag
+  stage.addEventListener('pointerdown', e => {
+    if (e.button !== undefined && e.button !== 0) return;
+    pid = e.pointerId;
+    stage.setPointerCapture(pid);
+    dragging = true;
+    moved = false;
+    startX = e.clientX;
+    startPos = pos;
+    vel = 0;
+    samples = [{ t: e.timeStamp, p: pos }];
+    kick();
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!dragging || e.pointerId !== pid) return;
+    const dx = e.clientX - startX;
+    if (!moved && Math.abs(dx) > 6) {
+      moved = true;
+      stage.classList.add('is-dragging');
+      wake();
+    }
+    if (!moved) return;
+    pos = startPos - dx / stepPx;
+    samples.push({ t: e.timeStamp, p: pos });
+    while (samples.length > 2 && e.timeStamp - samples[0].t > 100) samples.shift();
+  });
+  function endDrag(e) {
+    if (!dragging || e.pointerId !== pid) return;
+    dragging = false;
+    stage.classList.remove('is-dragging');
+    if (!moved) {
+      const hit = document.elementsFromPoint(e.clientX, e.clientY).find(el => el.classList && el.classList.contains('plate'));
+      if (hit) {
+        const i = +hit.dataset.i;
+        if (i !== mod(Math.round(target), N)) { goTo(i); wake(); }
+      }
+      kick();
+      return;
+    }
+    const a = samples[0], b = samples[samples.length - 1];
+    const dt = (b.t - a.t) / 1000;
+    const v = dt > 0.005 ? (b.p - a.p) / dt : 0;
+    vel = Math.max(-14, Math.min(14, v));
+    const proj = pos + vel * 0.22;
+    target = Math.round(Math.max(pos - 6, Math.min(pos + 6, proj)));
+    kick();
+  }
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
+  stage.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Mouse wheel / trackpad
+  let wAcc = 0, wLast = 0;
+  stage.addEventListener('wheel', e => {
+    e.preventDefault();
+    const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    wAcc += d;
+    const now = performance.now();
+    if (Math.abs(wAcc) > 40 && now - wLast > 220) {
+      target = Math.round(target) + Math.sign(wAcc);
+      wAcc = 0;
+      wLast = now;
+      wake();
+      kick();
+    }
+  }, { passive: false });
+
+  // Keyboard
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { target = Math.round(target) + 1; wake(); kick(); }
+    if (e.key === 'ArrowLeft') { target = Math.round(target) - 1; wake(); kick(); }
+  });
+
+  // Swipe hint: hides once someone swipes, comes back after 25 s of quiet
+  let idleTimer = 0;
+  function wake() {
+    hint.classList.add('is-gone');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => hint.classList.remove('is-gone'), 25000);
+  }
+
+  if ('ResizeObserver' in window) new ResizeObserver(measure).observe(stage);
+  window.addEventListener('resize', measure);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); placeIndicator(); });
+
+
+  // ===== Kiosk: auto-update, offline photos, screen awake =====
+  const imgURL = key => 'img/' + key + '.webp?v=' + IMG_V;
+  window.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Last touch time, so an update never reloads the page under a guest's finger
+  let lastTouch = Date.now();
+  ['pointerdown', 'keydown', 'wheel'].forEach(t =>
+    window.addEventListener(t, () => { lastTouch = Date.now(); }, { capture: true, passive: true }));
+  const QUIET_MS = 2 * 60 * 1000;
+
+  // New version published → reload once nobody has touched the screen for two minutes
+  let newVersion = false;
+  async function checkUpdate() {
+    try {
+      const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return;
+      const v = (await r.json()).version;
+      if (v && v !== VERSION) newVersion = true;
+    } catch (e) { /* offline: keep showing the saved menu */ }
+  }
+  setInterval(checkUpdate, 5 * 60 * 1000);
+  setInterval(() => { if (newVersion && Date.now() - lastTouch > QUIET_MS) location.reload(); }, 20 * 1000);
+
+  // Offline: keep every photo on the tablet
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  const allKeys = MENU.flatMap(s => s.subs.flatMap(sub => sub.items.map(it => it.img)));
+  let preIdx = 0;
+  function preloadNext() {
+    if (preIdx >= allKeys.length) return;
+    const im = new Image();
+    im.onload = im.onerror = () => setTimeout(preloadNext, 30);
+    im.src = imgURL(allKeys[preIdx++]);
+  }
+  setTimeout(() => { for (let k = 0; k < 3; k++) preloadNext(); }, 2500);
+
+  // Keep the screen on while the menu is open
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && document.visibilityState === 'visible') await navigator.wakeLock.request('screen'); } catch (e) { /* not allowed here: the kiosk app keeps the screen on */ }
+  }
+  document.addEventListener('visibilitychange', keepAwake);
+  keepAwake();
+
+  buildSection(0);
+  info.classList.remove('rise');
+})();
+</script>
+</body>
+</html>
