@@ -344,7 +344,7 @@ html, body { overscroll-behavior: none; touch-action: manipulation; }
 
 <script>
 (() => {
-  const VERSION = '20261125-0837';
+  const VERSION = '20261125-0921';
   const IMG_V = '20261123-0928';
   // Menu data. Kitchen and desserts: säwir printed menu (Nov 2026). Drinks: printed menu prices, volumes from the säwir drink cards.
   // k = [ккал, белки, жиры, углеводы]; w = weight or volume; t = badge.
@@ -862,9 +862,13 @@ html, body { overscroll-behavior: none; touch-action: manipulation; }
   setInterval(() => { if (newVersion && Date.now() - lastTouch > QUIET_MS) location.reload(); }, 20 * 1000);
 
   // Offline: keep every photo on the tablet
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
+  // Photos of older versions are removed from the tablet so storage does not grow
+  if (window.caches) caches.open('sawir-menu-v1').then(c => c.keys().then(ks => ks.forEach(r => {
+    if (r.url.includes('/img/') && r.url.includes('?v=') && !r.url.includes('?v=' + IMG_V)) c.delete(r);
+  }))).catch(() => {});
   const allKeys = MENU.flatMap(s => s.subs.flatMap(sub => sub.items.map(it => it.img)));
   let preIdx = 0;
   function preloadNext() {
