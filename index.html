@@ -344,7 +344,7 @@ html, body { overscroll-behavior: none; touch-action: manipulation; }
 
 <script>
 (() => {
-  const VERSION = '20261124-0924';
+  const VERSION = '20261125-0812';
   const IMG_V = '20261123-0928';
   // Menu data. Kitchen and desserts: säwir printed menu (Nov 2026). Drinks: printed menu prices, volumes from the säwir drink cards.
   // k = [ккал, белки, жиры, углеводы]; w = weight or volume; t = badge.
@@ -837,6 +837,8 @@ html, body { overscroll-behavior: none; touch-action: manipulation; }
 
 
   // ===== Kiosk: auto-update, offline photos, screen awake =====
+  // Guests who scan the table QR code open the menu with ?qr: their phones load photos only as they swipe
+  const GUEST = /[?&]qr\b/.test(location.search);
   const imgURL = key => 'img/' + key + '.webp?v=' + IMG_V;
   window.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -871,14 +873,16 @@ html, body { overscroll-behavior: none; touch-action: manipulation; }
     im.onload = im.onerror = () => setTimeout(preloadNext, 30);
     im.src = imgURL(allKeys[preIdx++]);
   }
-  setTimeout(() => { for (let k = 0; k < 3; k++) preloadNext(); }, 2500);
+  if (!GUEST) setTimeout(() => { for (let k = 0; k < 3; k++) preloadNext(); }, 2500);
 
   // Keep the screen on while the menu is open
   async function keepAwake() {
     try { if ('wakeLock' in navigator && document.visibilityState === 'visible') await navigator.wakeLock.request('screen'); } catch (e) { /* not allowed here: the kiosk app keeps the screen on */ }
   }
-  document.addEventListener('visibilitychange', keepAwake);
-  keepAwake();
+  if (!GUEST) {
+    document.addEventListener('visibilitychange', keepAwake);
+    keepAwake();
+  }
 
   buildSection(0);
   info.classList.remove('rise');
